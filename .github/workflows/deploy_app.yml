@@ -22,7 +22,7 @@ jobs:
 
       - name: Get Shortened GitHub SHA
         id: get_short_sha
-        run: echo "::set-output name=short_sha::$(echo ${{ github.sha }} | cut -c1-7)"  # Shorten SHA using shell command
+        run: echo "name=short_sha::$(echo ${{ github.sha }} | cut -c1-7) >> $GITHUB_OUTPUT"  
 
       - name: Build Docker Image
         run: docker build -t my-image:pr-${{ steps.get_short_sha.outputs.short_sha }} .
@@ -71,7 +71,7 @@ jobs:
 
       - name: Get ECS Cluster Name
         id: get_ecs_cluster_name
-        run: echo "::set-output name=ecs_cluster_name::$(terraform output -raw ecs_cluster_name)"
+        run: echo "ecs_cluster_name=$(terraform output -raw ecs_cluster_name)" >> $GITHUB_OUTPUT
 
       - name: Deploy to ECS
         run: |
