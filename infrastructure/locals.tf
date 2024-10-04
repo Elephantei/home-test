@@ -1,3 +1,3 @@
 locals {
-  region = ""
+  region = "eu-west-2"
 }

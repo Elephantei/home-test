@@ -46,7 +46,7 @@ resource "aws_ecs_task_definition" "main" {
       logDriver = "awslogs"
       options = {
         "awslogs-group"         = "/ecs/tech-test-task"
-        "awslogs-region"        = "us-east-1"
+        "awslogs-region"        = "eu-west-2"
         "awslogs-stream-prefix" = "ecs"
       }
     }
