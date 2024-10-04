@@ -55,7 +55,7 @@ resource "aws_ecs_service" "main" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.main.arn
+    target_group_arn = aws_lb_target_group.default_tg.arn
     container_name   = "tech-test-app"
     container_port   = 80
   }
