@@ -1,4 +1,4 @@
-name: Docker CI/CD Pipeline
+name: Build & deploy app
 
 on:
   pull_request:
@@ -27,8 +27,16 @@ jobs:
       - name: Build Docker Image
         run: docker build -t my-image:pr-${{ steps.get_short_sha.outputs.short_sha }} .
 
-      - name: Checkov Scan Docker Image
-        run: checkov -d . --docker-image my-image:pr-${{ steps.get_short_sha.outputs.short_sha }}
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+
+      - name: Test with Checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          framework: terraform 
 
   build_upload_deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
