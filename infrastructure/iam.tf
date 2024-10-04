@@ -1,4 +1,4 @@
-resource "aws_iam_role" "ecs_task_execution_role" {
+resource "aws_iam_role" "ecs_run_tasks" {
   name = "ecsTaskExecutionRole"
 
   assume_role_policy = jsonencode({
@@ -13,7 +13,7 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
-  role       = aws_iam_role.ecs_task_execution_role.name
+resource "aws_iam_role_policy_attachment" "ecs_run_tasks_policy" {
+  role       = aws_iam_role.ecs_run_tasks.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }

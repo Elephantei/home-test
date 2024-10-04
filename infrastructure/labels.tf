@@ -1,8 +1,10 @@
-module "eg_staging_ecs_label" {
+module "eg_ecs_label" {
+  for_each = toset(local.environments)
+
   source = "cloudposse/label/null"
 
   namespace  = "eg"
-  stage      = "staging" # Set to staging for both ECS and ALB
+  stage      = each.key
   name       = "ECS"
   attributes = ["service"]
   delimiter  = "-"
