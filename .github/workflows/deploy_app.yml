@@ -1,0 +1,75 @@
+name: Docker CI/CD Pipeline
+
+on:
+  pull_request:
+    paths:
+      - "**/*.dockerfile"
+      - "Dockerfile"
+      - ".github/workflows/**/*"
+  push:
+    branches:
+      - main
+  secrets:
+    AWS_REGION: 
+    required: true
+
+jobs:
+  build_and_test:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      issues: write
+      pull-requests: write
+      actions: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build Docker Image
+        run: docker build -t my-image:pr-${{ github.sha }} .
+
+      - name: Checkov Scan Docker Image
+        run: checkov -d . --docker-image my-image:pr-${{ github.sha }}
+
+  build_upload_deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      issues: write
+      pull-requests: write
+      actions: read
+    env:
+      REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      REPOSITORY: my-ecr-repo
+      IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag
+        run: |
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+      - name: Get ECS Cluster Name
+        id: get_ecs_cluster_name
+        run: echo "::set-output name=ecs_cluster_name::$(terraform output -raw ecs_cluster_name)"
+
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service --cluster ${{ steps.get_ecs_cluster_name.outputs.ecs_cluster_name }} --service my-service --force-new-deployment --region ${{ secrets.AWS_REGION }}

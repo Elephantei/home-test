@@ -1,0 +1,109 @@
+name: "Environment Plan (Template)"
+on:
+  workflow_call:
+    inputs:
+      ENVIRONMENT:
+        description: The environment that terraform is being run against
+        type: string
+        required: true
+      TF_WORKING_DIRECTORY:
+        description: Directory to run the terraform against
+        type: string
+        required: true
+    secrets:
+      AWS_REGION:
+        description:
+        required: true  
+      AWS_ACCESS_KEY_ID: 
+        description:
+        required: true  
+      AWS_SECRET_ACCESS_KEY: 
+        description:
+        required: true  
+        
+jobs:
+  terraform_plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      issues: write
+      pull-requests: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Initialize Terraform
+        run: |
+          terraform init \
+            -backend-config='backends/${{ inputs.ENVIRONMENT }}.remote.tfbackend'
+
+      - name: Ensure Terraform is Formatted Correctly
+        run: terraform fmt -check -recursive -no-color -diff
+
+      - name: Validate Terraform
+        run: terraform validate -no-color
+
+      - name: Plan Terraform
+        id: plan
+        run: |
+          terraform plan -no-color -input=false \
+            --var-file 'environments/${{ inputs.ENVIRONMENT}}.tfvars'
+
+      # - uses: actions/github-script@v7
+      #   if: github.event_name == 'pull_request'
+      #   env:
+      #     OUTPUT: ${{ steps.plan.outputs.stdout }}
+      #   with:
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     script: |
+      #       const { data: comments } = await github.rest.issues.listComments({
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         issue_number: context.issue.number,
+      #       })
+
+      #       const previousBotCommentForEnvironment = comments.find(comment => {
+      #         return comment.user.type === 'Bot' && comment.body.includes('Terraform Plan (${{ inputs.ENVIRONMENT }})')
+      #       })
+
+      #       const output = `
+      #       ### Terraform Plan (${{ inputs.ENVIRONMENT }}) 📖\`${{ steps.plan.outcome }}\`
+
+      #       <details><summary>Show Plan</summary>
+
+      #       \`\`\`\n
+      #         ${process.env.OUTPUT}
+      #       \`\`\`
+
+      #       </details>`;
+
+      #       if (previousBotCommentForEnvironment) {
+      #         github.rest.issues.updateComment({
+      #           owner: context.repo.owner,
+      #           repo: context.repo.repo,
+      #           comment_id: previousBotCommentForEnvironment.id,
+      #           body: output
+      #         })
+      #       } else {
+      #         github.rest.issues.createComment({
+      #           issue_number: context.issue.number,
+      #           owner: context.repo.owner,
+      #           repo: context.repo.repo,
+      #           body: output
+      #         })
+      #       }

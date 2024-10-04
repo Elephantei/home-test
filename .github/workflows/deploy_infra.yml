@@ -1,0 +1,32 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths: ["infrastructure/**/*", ".github/workflows/**/*"]
+
+jobs:
+  deploy_staging:
+    name: Terraform Deploy (staging)
+    uses: ./.github/workflows/_environment_deploy.yml
+    with:
+      ENVIRONMENT: staging
+      TF_WORKING_DIRECTORY: infrastructure
+    secrets:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+
+  # deploy_uat:
+  #   name: Terraform Deploy (uat)
+  #   needs: [deploy_staging]
+  #   uses: ./.github/workflows/_environment_deploy.yml
+  #   with:
+  #     ENVIRONMENT: uat
+  #   secrets:
+  #     AWS_REGION: ${{ secrets.AWS_REGION }}
+  #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+

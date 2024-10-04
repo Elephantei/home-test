@@ -1,0 +1,101 @@
+name: "Environment Deploy (Template)"
+on:
+  workflow_call:
+    inputs:
+      ENVIRONMENT:
+        description: The environment that terraform is being run against
+        type: string
+        required: true
+      TF_WORKING_DIRECTORY:
+        description: Directory to run the terraform against
+        type: string
+        required: true
+    secrets:
+      AWS_REGION:
+        description:
+        required: true  
+      AWS_ACCESS_KEY_ID: 
+        description:
+        required: true  
+      AWS_SECRET_ACCESS_KEY: 
+        description:
+        required: true  
+
+env:
+  TERRAFORM_NO_CHANGES_MESSAGE: "No changes. Your infrastructure matches the configuration."
+
+jobs:
+  deploy:
+    name: Terraform Deploy
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.ENVIRONMENT }}
+    permissions:
+      contents: write
+      id-token: write
+      issues: write
+      pull-requests: write
+      actions: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.TF_WORKING_DIRECTORY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+ 
+      - name: Initialize Terraform
+        run: |
+          terraform init \
+            -backend-config='backends/${{ inputs.ENVIRONMENT }}.remote.tfbackend'
+
+      - name: Plan Terraform
+        id: plan
+        env:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+        run: |
+          terraform plan -no-color -input=false \
+            --var-file 'environments/${{ inputs.ENVIRONMENT }}.tfvars' \
+            -out='${{ inputs.ENVIRONMENT }}.out'
+
+      - name: Generate GitHub Issue Plan Approval Body
+        id: plan_approval_body
+        if: ${{ !contains(steps.plan.outputs.stdout, env.TERRAFORM_NO_CHANGES_MESSAGE) }}
+        run: |
+          {
+            echo 'issue_body<<EOF'
+            echo '### Terraform Plan (${{ inputs.ENVIRONMENT }})'
+            echo ''
+            echo '<details><summary>Show Plan</summary>'
+            echo ''
+            echo '```'
+            echo '  ${{ steps.plan.outputs.stdout }}'
+            echo '```'
+            echo ''
+            echo '</details>'
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Manual Approval (10 minute Timeout)
+        uses: trstringer/manual-approval@v1
+        if: ${{ !contains(steps.plan.outputs.stdout, env.TERRAFORM_NO_CHANGES_MESSAGE) }}
+        timeout-minutes: 10
+        with:
+          secret: ${{ secrets.MANUAL_APPROVAL_GH_TOKEN }}
+          approvers: approving-team
+          minimum-approvals: 1
+          issue-title: 'Terraform plan approval (${{ inputs.ENVIRONMENT }})'
+          issue-body: ${{ steps.plan_approval_body.outputs.issue_body }}
+
+      - name: Apply Terraform
+        run: terraform apply '${{ inputs.ENVIRONMENT }}.out'
+
