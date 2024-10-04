@@ -61,6 +61,13 @@ jobs:
       - name: Validate Terraform
         run: terraform validate -no-color
 
+      - name: Test with Checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: infrastructure/
+          framework: terraforrm 
+
       - name: Plan Terraform
         id: plan
         run: |
