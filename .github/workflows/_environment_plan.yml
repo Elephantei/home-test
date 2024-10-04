@@ -44,12 +44,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-        with:
-          mask-password: 'false'
-        
       - uses: hashicorp/setup-terraform@v3
 
       - name: Initialize Terraform
@@ -62,7 +56,7 @@ jobs:
 
       - name: Validate Terraform
         run: terraform validate -no-color
-
+      
       - name: Test with Checkov
         id: checkov
         uses: bridgecrewio/checkov-action@master
@@ -75,6 +69,7 @@ jobs:
         run: |
           terraform plan -no-color -input=false 
 
+      # This will neatly display the contect of tf plan in the PR body
       - uses: actions/github-script@v7
         if: github.event_name == 'pull_request'
         env:

@@ -14,12 +14,13 @@ jobs:
   build_and_test:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    outputs:  # Define outputs for this job
+    outputs:  
       short_sha: ${{ steps.get_short_sha.outputs.short_sha }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      # Shorten the SHA to use in VC
       - name: Get Shortened GitHub SHA
         id: get_short_sha
         run: echo "name=short_sha::$(echo ${{ github.sha }} | cut -c1-7) >> $GITHUB_OUTPUT"  
@@ -44,11 +45,11 @@ jobs:
   build_upload_deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: build_and_test  # This job depends on build_and_test
+    needs: build_and_test  
     env:
-      SHORT_SHA: ${{ needs.build_and_test.outputs.short_sha }}  # Access the short SHA from the previous job
+      SHORT_SHA: ${{ needs.build_and_test.outputs.short_sha }}  
       REPOSITORY: my-ecr-repo
-      IMAGE_TAG: ${{ needs.build_and_test.outputs.short_sha }}  # Use the shortened SHA as the image tag
+      IMAGE_TAG: ${{ needs.build_and_test.outputs.short_sha }}  
     steps:
       - name: Checkout code
         uses: actions/checkout@v2

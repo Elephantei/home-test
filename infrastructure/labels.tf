@@ -4,7 +4,7 @@ module "eg_ecs_label" {
   source = "cloudposse/label/null"
 
   namespace  = "eg"
-  stage      = each.key # Set to current environment for both ECS and ALB
+  stage      = each.key
   name       = "ECS"
   attributes = ["service"]
   delimiter  = "-"
@@ -14,6 +14,7 @@ module "eg_ecs_label" {
     "Snapshot"     = "false"
   }
 }
+
 module "eg_staging_alb_label" {
   source = "cloudposse/label/null"
 
