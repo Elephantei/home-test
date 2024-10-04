@@ -22,7 +22,7 @@ jobs:
 
       - name: Get Shortened GitHub SHA
         id: get_short_sha
-        run: echo "::set-output name=short_sha::${{ GITHUB_SHA::7 }}"  # Set shortened SHA as output
+        run: echo "::set-output name=short_sha::$(echo ${{ github.sha }} | cut -c1-7)"  # Shorten SHA using shell command
 
       - name: Build Docker Image
         run: docker build -t my-image:pr-${{ steps.get_short_sha.outputs.short_sha }} .
