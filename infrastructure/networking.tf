@@ -7,9 +7,11 @@ resource "aws_vpc" "default_vpc" {
   enable_dns_hostnames = true
 }
 resource "aws_subnet" "public" {
-  for_each = toset(local.environments)
+  for_each = {
+    for env in local.environments :
+    env => range(2)
+  }
 
-  count                   = 2
   vpc_id                  = aws_vpc.default_vpc[each.key].id
   cidr_block              = cidrsubnet(aws_vpc.default_vpc[each.key].cidr_block, 8, count.index)
   availability_zone       = element(data.aws_availability_zones.available.names, count.index)
@@ -35,9 +37,10 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table_association" "public" {
-  for_each = toset(local.environments)
-
-  count          = 2
+  for_each = {
+    for env in local.environments :
+    env => range(2) # Create 2 subnets per environment
+  }
   subnet_id      = element(aws_subnet.public[each.key].*.id, count.index)
   route_table_id = aws_route_table.public[each.key].id
 }
