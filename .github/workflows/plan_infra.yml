@@ -4,6 +4,13 @@ on:
   pull_request:
     paths: ["infrastructure/**/*", ".github/workflows/**/*"]
 
+permissions: 
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
+  actions: read
+  
 jobs:
   plan_staging:
     name: Terraform Plan (staging)
