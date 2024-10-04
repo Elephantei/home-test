@@ -5,12 +5,12 @@ resource "aws_ecs_cluster" "main" {
   name = module.eg_ecs_label[each.key].id # Use module output for naming
 }
 
-# Create ECS task definition. Image will be updated through the app pipeline. Left the values as default, but ideally this would be a module with all defaults as variables. 
+# Create ECS Task definition. Image will be updated through the app pipeline. Left the values as default, but ideally this would be a module with all defaults as variables. 
 resource "aws_ecs_task_definition" "main" {
   for_each = toset(local.environments)
 
   family                   = "${module.eg_ecs_label[each.key].id}-task"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  execution_role_arn       = aws_iam_role.ecs_run_tasks.arn
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   memory                   = "512"
@@ -35,7 +35,7 @@ resource "aws_ecs_task_definition" "main" {
     }
   }])
 
-  task_role_arn = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn = aws_iam_role.ecs_run_tasks.arn
 }
 
 # Create ECS Services with cloudposse labels for consistent naming
