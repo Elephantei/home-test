@@ -14,30 +14,30 @@ jobs:
   build_and_test:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-      actions: read
+    outputs:  # Define outputs for this job
+      short_sha: ${{ steps.get_short_sha.outputs.short_sha }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Get Shortened GitHub SHA
+        id: get_short_sha
+        run: echo "::set-output name=short_sha::${{ github.sha::0:5 }}"  # Set shortened SHA as output
+
       - name: Build Docker Image
-        run: docker build -t my-image:pr-${{ github.sha }} .
+        run: docker build -t my-image:pr-${{ steps.get_short_sha.outputs.short_sha }} .
 
       - name: Checkov Scan Docker Image
-        run: checkov -d . --docker-image my-image:pr-${{ github.sha }}
+        run: checkov -d . --docker-image my-image:pr-${{ steps.get_short_sha.outputs.short_sha }}
 
   build_upload_deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-      actions: read
+    needs: build_and_test  # This job depends on build_and_test
     env:
+      SHORT_SHA: ${{ needs.build_and_test.outputs.short_sha }}  # Access the short SHA from the previous job
       REPOSITORY: my-ecr-repo
-      IMAGE_TAG: ${{ github.sha }}
+      IMAGE_TAG: ${{ needs.build_and_test.outputs.short_sha }}  # Use the shortened SHA as the image tag
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
