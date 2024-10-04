@@ -64,7 +64,6 @@ jobs:
 
         run: |
           terraform plan -no-color -input=false \
-            --var-file 'environments/${{ inputs.ENVIRONMENT }}.tfvars' \
             -out='${{ inputs.ENVIRONMENT }}.out'
 
       - name: Generate GitHub Issue Plan Approval Body
