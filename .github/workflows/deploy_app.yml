@@ -26,14 +26,21 @@ jobs:
 
       - name: Build Docker Image
         run: docker build -t my-image:pr-${{ steps.get_short_sha.outputs.short_sha }} .
-        
+
       - name: Test with Checkov
         id: checkov
         uses: bridgecrewio/checkov-action@master
         with:
           directory: src/
           framework: dockerfile 
+          output: console
 
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image: my-image:pr-${{ steps.get_short_sha.outputs.short_sha }}
+          format: 'table' 
+          
   build_upload_deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
