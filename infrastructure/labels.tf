@@ -1,25 +1,12 @@
-module "eg_staging_ecs_label" {
+module "eg_ecs_label" {
+  for_each = toset(local.environments)
+
   source = "cloudposse/label/null"
 
   namespace  = "eg"
-  stage      = "staging" # Set to staging for both ECS and ALB
+  stage      = each.key # Set to current environment for both ECS and ALB
   name       = "ECS"
   attributes = ["service"]
-  delimiter  = "-"
-
-  tags = {
-    "BusinessUnit" = "XYZ",
-    "Snapshot"     = "false"
-  }
-}
-
-module "eg_staging_alb_label" {
-  source = "cloudposse/label/null"
-
-  namespace  = "eg"
-  stage      = "staging"
-  name       = "ALB"
-  attributes = ["web"]
   delimiter  = "-"
 
   tags = {
