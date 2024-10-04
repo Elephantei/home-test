@@ -6,6 +6,13 @@ on:
       - main
     paths: ["infrastructure/**/*", ".github/workflows/**/*"]
 
+permissions: 
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
+  actions: read
+
 jobs:
   deploy_staging:
     name: Terraform Deploy (staging)
