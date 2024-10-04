@@ -14,3 +14,17 @@ module "eg_ecs_label" {
     "Snapshot"     = "false"
   }
 }
+module "eg_staging_alb_label" {
+  source = "cloudposse/label/null"
+
+  namespace  = "eg"
+  stage      = "staging"
+  name       = "ALB"
+  attributes = ["web"]
+  delimiter  = "-"
+
+  tags = {
+    "BusinessUnit" = "XYZ",
+    "Snapshot"     = "false"
+  }
+}
