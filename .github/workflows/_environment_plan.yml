@@ -31,6 +31,9 @@ jobs:
       issues: write
       pull-requests: write
       actions: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.TF_WORKING_DIRECTORY }}
     steps:
       - uses: actions/checkout@v4
       
